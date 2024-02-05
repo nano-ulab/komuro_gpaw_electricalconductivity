@@ -4,7 +4,7 @@ rotY_theta_FeC=0.0
 rotZ_theta_FeC=0.0
 relativepos=Overlap
 
-systemname_mod=${SystemName}_${relativeposition}_rotX${rotX_theta_FeC}_rotY${rotY_theta_FeC}_rotZ${rotZ_theta_FeC}
+systemname_mod=${SystemName}_${relativepos}_rotX${rotX_theta_FeC}_rotY${rotY_theta_FeC}_rotZ${rotZ_theta_FeC}
 
 V_low=-0.5
 V_high=0.5
