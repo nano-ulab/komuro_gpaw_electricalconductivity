@@ -26,7 +26,7 @@ import math
 import sys
 
 from ase.visualize import view
-from ase.io import write
+from ase.io import write, cif
 from ase import Atoms
 from ase import parallel
 
@@ -109,6 +109,10 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
         try: raise ValueError("!!! ERROR : relative position should be chosen from Overlap, Bridge, Shift or None" )
         except ValueError as e: print(e)
 
+
+    # Define systemname with modification
+    
+    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC)+"_"+"rotY"+str(rotY_theta_FeC)+"_"+"rotZ"+str(rotZ_theta_FeC)
     # Making up system
 
     system = Atoms('C10H10FeC32C32', 
@@ -242,6 +246,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.center()
 
+    cif.write_cif(systemname_mod+".cif", system)
     # view(system)
     # write('model_DFT_FeC-graphene_ON.png', system)
 
@@ -255,7 +260,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     # GPAW calculator's Parameters
 
-    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC)+"_"+"rotY"+str(rotY_theta_FeC)+"_"+"rotZ"+str(rotZ_theta_FeC)
+
 
     calc = GPAW(h=0.3,
                 xc='PBE',
