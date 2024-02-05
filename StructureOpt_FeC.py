@@ -82,10 +82,10 @@ system.calc = calc
 from ase.visualize import view
 from ase.io import write
 view(system)
-write('FeC-graphene_BeforeOpt.png', system)
+write('FeC_BeforeOpt.png', system)
 
-opt = QuasiNewton(system, trajectory='FeC-graphene.lcao.traj')
+opt = QuasiNewton(system, trajectory='FeC.lcao.traj')
 opt.run(fmax=0.05)
 
 view(system)
-write('FeC-graphene_AfterOpt.png', system)
+write('FeC_AfterOpt.png', system)
