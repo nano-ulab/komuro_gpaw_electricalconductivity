@@ -14,7 +14,7 @@ os.chdir(os.path.dirname(os.path.abspath(__file__)))
 import glob
 
 
-def main(SystemName, Voltage_range):
+def main(cif_files_folder_name, Voltage_range):
     # load calculated results
 
     """
@@ -39,10 +39,12 @@ def main(SystemName, Voltage_range):
     cif_file_paths = glob.glob(os.path.join(".", cif_files_folder_name, "*.cif"))
 
     for cif_file_path in cif_file_paths:
+
+        savename = os.path.splitext(os.path.basename(cif_file_path))[0]
        
-        if os.path.isfile(os.path.join(cif_file_path, "_scat.gpw")):
+        if os.path.isfile(os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw")):
             
-            scat, scat_calc = restart(os.path.join(cif_file_path, "_scat.gpw"))
+            scat, scat_calc = restart(os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw"))
 
             Ef_scat = scat.calc.get_fermi_level()
             H_skMM_scat, S_kMM_scat = get_lcao_hamiltonian(scat_calc)
@@ -55,9 +57,10 @@ def main(SystemName, Voltage_range):
             try: raise ValueError("!!! ERROR : "+(os.path.join(cif_file_path, "_scat.gpw"))+" is missing!")
             except ValueError as e: print(e)
 
-        if os.path.isfile(os.path.join(cif_file_path, "_llead.gpw")):
 
-            llead, llead_calc = restart(os.path.join(cif_file_path, "_llead.gpw"))
+        if os.path.isfile(os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw")):
+
+            llead, llead_calc = restart(os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw"))
 
             Ef_llead = llead.calc.get_fermi_level()
             tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc)
@@ -115,8 +118,8 @@ def main(SystemName, Voltage_range):
         tcalc.set(energies=Voltage_range)
         T = tcalc.get_transmission()
         plt.plot(tcalc.energies, T)
-        plt.title("Transmission function of " + SystemName)
-        plt.savefig(SystemName+"_"+"TransmissionFunc.png")
+        plt.title("Transmission function of " + savename)
+        plt.savefig(savename+"_"+"TransmissionFunc.png")
         plt.close()
 
         # # ... and the projected density of states (pdos) of the FeC molecular orbitals
@@ -132,25 +135,25 @@ def main(SystemName, Voltage_range):
         current = tcalc.get_current(Voltage_range, T = 300.)
         current_mods = 2.*units._e**2/units._hplanck*current
 
-        plt.title("I-V curve of " + SystemName)
+        plt.title("I-V curve of " + savename)
         plt.plot(Voltage_range, 2.*units._e**2/units._hplanck*current)
         plt.xlabel("U [V]")
         plt.ylabel("I [A]")
-        plt.savefig(SystemName+"_"+"IV.png")
+        plt.savefig(savename+"_"+"IV.png")
         plt.close()
 
         # log10
-        plt.title("logI-V curve of " + SystemName)
+        plt.title("logI-V curve of " + savename)
         plt.plot(Voltage_range, np.log10(np.abs(current_mods)))
         plt.xlabel("U [V]")
         plt.ylabel("I [A]")
-        plt.savefig(SystemName+"_"+"logIV.png")
+        plt.savefig(savename+"_"+"logIV.png")
         plt.close()
 
         import csv
 
         IV_data = np.array([Voltage_range, current_mods]).T
-        with open(SystemName+"_"+"IV.csv", "w") as IV_file:
+        with open(savename+"_"+"IV.csv", "w") as IV_file:
             writer = csv.writer(IV_file)
             writer.writerows(IV_data.tolist())
 
