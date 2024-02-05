@@ -5,24 +5,83 @@ import matplotlib.pyplot as plt
 
 from ase import units
 
-# Principal layer size
-# Uncomment this line if going back to gpawtransport again
-# pl = 4 * 9 # 9 is the number of bf per Pt atom (basis=szp), see below
+from gpaw.lcao.tools import (get_lcao_hamiltonian,
+                             get_lead_lcao_hamiltonian, lead_kspace2realspace)
 
-# Read in the hamiltonians
-h, s = pickle.load(open('scat_hs.pickle', 'rb'))
-# Uncomment this line if going back to gpawtransport again
-# h, s = h[pl:-pl, pl:-pl], s[pl:-pl, pl:-pl]
-h1, s1 = pickle.load(open('lead1_hs.pickle', 'rb'))
-h2, s2 = pickle.load(open('lead2_hs.pickle', 'rb'))
+from gpaw import restart
+from ase.parallel import paropen as open
 
-tcalc = TransportCalculator(h=h, h1=h1, h2=h2,  # hamiltonian matrices
-                            s=s, s1=s1, s2=s2,  # overlap matrices
+
+# Change Current directory to root dir of this file
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+# Output Parameters
+
+SystemName = "FeC-graphene_ON"
+voltage_range = np.arange(-0.5, 0.5, 0.01)
+
+# load calculated results
+
+"""
+### lead (Principal layer) ###
+    Atoms: Graphene
+    Hamiltonian:
+    H_lead = (
+        H_l   V
+        V†    H_l
+    )
+
+### Scattering Region ###
+    Atoms: G-FeC-G
+    Hamiltonian:
+    H_scat = (
+        H_l 0      0
+        0   H_scat 0
+        0   0      H_l
+    )
+"""
+scat, scat_calc = restart(SystemName+"_"+"scat.gpw")
+
+Ef_scat = scat.calc.get_fermi_level()
+H_skMM_scat, S_kMM_scat = get_lcao_hamiltonian(scat_calc)
+# Only use first kpt, spin, as there are no more
+
+H_scat, S_scat = H_skMM_scat[0, 0], S_kMM_scat[0]
+H_scat -= Ef_scat * S_scat
+
+
+llead, llead_calc = restart(SystemName+"_"+"llead.gpw")
+
+Ef_llead = llead.calc.get_fermi_level()
+H_skMM_llead, S_kMM_llead = get_lcao_hamiltonian(llead_calc)
+bzk_kc=llead_calc.wfs.kd.bzk_kc
+print(bzk_kc)
+weight_k=llead_calc.wfs.kd.weight_k
+print(weight_k)
+
+# Only use first kpt, spin, as there are no more
+
+H_llead, S_llead = H_skMM_llead[0, 0], S_kMM_llead[0]
+H_llead -= Ef_llead * S_llead
+
+rlead, rlead_calc = restart(SystemName+"_"+"llead.gpw")
+
+Ef_rlead = rlead_calc.get_fermi_level()
+H_skMM_rlead, S_kMM_rlead = get_lcao_hamiltonian(rlead_calc)
+# Only use first kpt, spin, as there are no more
+
+H_rlead, S_rlead = H_skMM_rlead[0, 0], S_kMM_rlead[0]
+H_rlead -= Ef_rlead * S_rlead
+
+
+tcalc = TransportCalculator(h=H_scat, h1=H_llead, h2=H_rlead,  # hamiltonian matrices
+                            s=S_scat, s1=S_llead, s2=H_rlead,  # overlap matrices
                             align_bf=1)        # align the Fermi levels
+
 
 # Calculate the conductance (the energy zero corresponds to the Fermi level)
 
-voltage_range = np.arange(-0.5, 0.5, 0.01)
 
 tcalc.set(energies=[voltage_range])
 # for i in range(len(voltage_range)):
@@ -50,36 +109,44 @@ tcalc.set(h=h_rot, s=s_rot)
 tcalc.set(energies=voltage_range)
 T = tcalc.get_transmission()
 plt.plot(tcalc.energies, T)
-plt.title('Transmission function')
-plt.savefig('FeC-graphene_ON_TransimissonFunc.png')
+plt.title("Transmission function of " + SystemName)
+plt.savefig(SystemName+"_"+"TransmissionFunc.png")
 plt.close()
 
 # ... and the projected density of states (pdos) of the FeC molecular orbitals
 tcalc.set(pdos=bfs)
 pdos_ne = tcalc.get_pdos()
+plt.title("Projected density of states of " + SystemName)
 for i in range(len(pdos_ne)):
     plt.plot(tcalc.energies, pdos_ne[i], label=str(i))
-    plt.title('Projected density of states')
-    # plt.legend()
-    # plt.savefig('FeC-graphene_ON_PDOS_'+str(i)+'.png')
-    # plt.close()
-plt.savefig('FeC-graphene_ON_PDOS_FeC.png')
+plt.savefig(SystemName+"_"+"PDOS.png")
 plt.close()
 
 # Plot current correspond to Vb
 current = tcalc.get_current(voltage_range, T = 300.)
+current_mods = 2.*units._e**2/units._hplanck*current
+
+plt.title("I-V curve of " + SystemName)
 plt.plot(voltage_range, 2.*units._e**2/units._hplanck*current)
-plt.xlabel('U [V]')
-plt.ylabel('I [A]')
-plt.savefig('FeC-graphene_ON_IV.png')
+plt.xlabel("U [V]")
+plt.ylabel("I [A]")
+plt.savefig(SystemName+"_"+"IV.png")
 plt.close()
 
 # log10
-plt.plot(voltage_range, np.log10(2.*units._e**2/units._hplanck*current))
-plt.xlabel('U [V]')
-plt.ylabel('I [A]')
-plt.savefig('FeC-graphene_ON_logIV.png')
+plt.title("logI-V curve of " + SystemName)
+plt.plot(voltage_range, np.log10(current_mods))
+plt.xlabel("U [V]")
+plt.ylabel("I [A]")
+plt.savefig(SystemName+"_"+"logIV.png")
 plt.close()
+
+import csv
+
+IV_data = np.array([voltage_range, current_mods]).T
+with open(SystemName+"_"+"IV", "w") as IV_file:
+    writer = csv.writer(IV_file)
+    writer.writerows(IV_file.tolist())
 
 # Cut the coupling to the anti-bonding orbital.
 # print('Cutting the coupling to the renormalized molecular state at %.2f eV' % (
@@ -99,3 +166,4 @@ plt.close()
 # plt.plot(tcalc.energies, tcalc.get_transmission())
 # plt.title('Transmission without bonding orbital')
 # plt.show()
+

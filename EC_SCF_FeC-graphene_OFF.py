@@ -14,19 +14,37 @@
     to calculate electric conductivity of Graphene-FeC-Graphene based on Non-Static Green Function method.
 """
 
+##################
+#     Setup      #
+##################
+
 # import libraries
-from ase import Atoms
-from gpaw import GPAW, Mixer, FermiDirac, PW
-from gpaw.xc import XC
-from gpaw.lcao.tools import (get_lcao_hamiltonian,
-                             get_lead_lcao_hamiltonian)
+
 import pickle as pickle
 import numpy as np
 import math
+import sys
 
-#####################
-# Scattering region #
-#####################
+from ase.visualize import view
+from ase.io import write
+from ase import Atoms
+from ase import parallel
+
+from gpaw import GPAW, Mixer, FermiDirac, PW, mpi
+from gpaw.xc import XC
+from gpaw.lcao.tools import (get_lcao_hamiltonian, get_lead_lcao_hamiltonian)
+
+# Output Parameters
+
+SystemName = "FeC-graphene_OFF"
+NumAssignedCores = mpi.world.size
+IsDrawSystem = False
+IsSaveSystemFig = False
+
+# Change Current directory to root dir of this file
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 
 # Setup the Atoms for the scattering region.
 
@@ -42,7 +60,6 @@ dist_C_C_graphene     = 1.42
 len_graphene_unitcell = dist_C_C_graphene*math.sqrt(3)
 dist_Plane_to_Cp      = 3.3
 
-cellsize            = 30
 
 """
 Graphene unit cell is like a diamond which contains 2 Carbon atoms
@@ -63,6 +80,9 @@ supercellsize_2 = 4
 origin_shift_1  = -2
 origin_shift_2  = -2
 
+" You can rotate FeC between the graphene layers"
+rotX_theta_FeC = 0.0
+
 def rotX_np(theta, input):
     return np.dot(np.array([[1, 0, 0],[0, np.cos(theta), -np.sin(theta)],[0, np.sin(theta), np.cos(theta)]]), input)
 
@@ -72,7 +92,8 @@ def rotY_np(theta, input):
 def rotZ_np(theta, input):
     return np.dot(np.array([[np.cos(theta), -np.sin(theta), 0],[np.sin(theta), np.cos(theta), 0],[0, 0, 1]]), input)
 
-rotX_theta_FeC = np.pi/2
+
+# Making up system
 
 system = Atoms('C10H10FeC32C32', 
                positions=[
@@ -189,73 +210,52 @@ system = Atoms('C10H10FeC32C32',
                    (4/3)*unitcell_vec_3, 
                ],
                pbc = [True, True, True],
-
+               
                charges = [
-                  -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, 2.0,
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
-                  0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
-                  0.0, 0.0, 0.0, 0.0 
+                  -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.2, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, -0.0, 3.0,
+                  -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, 
+                  -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, 
+                  -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, -0.03125, 
+                  -0.03125, -0.03125,
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+                   0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
+                   0.0, 0.0,
                ]
                )
 
 system.center()
 
-from ase.visualize import view
-from ase.io import write
-view(system)
-write('model_DFT_FeC-graphene_OFF.png', system)
+# view(system)
+# write('model_DFT_FeC-graphene_ON.png', system)
+
+##################
+#  Calculation   #
+##################
+
+# Scattering region-------------------------
 
 # Attach a GPAW calculator
-calc = GPAW(h=0.2,
+
+# GPAW calculator's Parameters
+
+calc = GPAW(h=0.3,
             xc='PBE',
             basis='szp(dzp)',
             occupations=FermiDirac(width=0.1),
-            # kpts= {'size' : (4, 4, 4)},
             kpts={'density': 3.5, 'even': True},
-            # mode = PW(300),
             mode='lcao',
-            txt='FeC-graphene_OFF_lcao_scat_1.txt',
+            txt=SystemName+"_"+"scat.txt",
             mixer=Mixer(0.02, 5, weight=100.0),
-            # symmetry={'point_group': False, 'time_reversal': False}
+            symmetry={'point_group': False, 'time_reversal': False}
             )
 system.calc = calc
 
 system.get_potential_energy()  # Converge everything!
-Ef = system.calc.get_fermi_level()
 
-"""
-### lead (Principal layer) ###
-    Atoms: Graphene
-    Hamiltonian:
-    H_lead = (
-        H_l   V
-        V†    H_l
-    )
+calc.write(SystemName+"_"+"scat.gpw")
 
-### Scattering Region ###
-    Atoms: G-FeC-G
-    Hamiltonian:
-    H_scat = (
-        H_l 0      0
-        0   H_scat 0
-        0   0      H_l
-    )
-"""
-
-H_skMM, S_kMM = get_lcao_hamiltonian(calc)
-# Only use first kpt, spin, as there are no more
-if type(H_skMM) != None and type(S_kMM) != None:
-    H, S = H_skMM[0, 0], S_kMM[0]
-    H -= Ef * S
-    # remove_pbc(system, H, S, 0)
-
-    # Dump the Hamiltonian and Scattering matrix to a pickle file
-    pickle.dump((H.astype(complex), S.astype(complex)), open('scat_hs.pickle', 'wb'), 2)
-
-########################
-# Left principal layer #
-########################
+# Left lead layer-----------------------------
 
 # Use upper graphene in the lead, so only take those from before
 system = system[21:60].copy()
@@ -265,29 +265,14 @@ calc = GPAW(h=0.3,
             xc='PBE',
             basis='szp(dzp)',
             occupations=FermiDirac(width=0.1),
-            # kpts=(4, 1, 1),  # More kpts needed as the x-direction is shorter
             kpts={'density': 3.5, 'even': True},
             mode='lcao',
-            txt='FeC-graphene_OFF_lcao_llead_1.txt',
+            txt=SystemName+"_"+"llead.txt",
             mixer=Mixer(0.02, 5, weight=100.0),
-            symmetry={'point_group': False, 'time_reversal': False})
+            symmetry={'point_group': False, 'time_reversal': False}
+            )
 system.calc = calc
 
 system.get_potential_energy()  # Converge everything!
-Ef = system.calc.get_fermi_level()
 
-ibz2d_k, weight2d_k, H_skMM, S_kMM = get_lead_lcao_hamiltonian(calc)
-# Only use first kpt, spin, as there are no more
-if type(H_skMM) != None and type(S_kMM) != None:
-    H, S = H_skMM[0, 0], S_kMM[0]
-    H -= Ef * S
-
-    # Dump the Hamiltonian and Scattering matrix to a pickle file
-    pickle.dump((H, S), open('lead1_hs.pickle', 'wb'), 2)
-
-    #########################
-    # Right principal layer #
-    #########################
-    # This is identical to the left prinicpal layer so we don't have to do anything
-    # Just dump the same Hamiltonian and Scattering matrix to a pickle file
-    pickle.dump((H, S), open('lead2_hs.pickle', 'wb'), 2)
+calc.write(SystemName+"_"+"llead.gpw")
