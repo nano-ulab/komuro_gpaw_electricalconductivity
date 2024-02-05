@@ -48,7 +48,7 @@ def rotY_np(theta, input):
 def rotZ_np(theta, input):
     return np.dot(np.array([[np.cos(theta), -np.sin(theta), 0],[np.sin(theta), np.cos(theta), 0],[0, 0, 1]]), input)
 
-def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC):
+def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativeposition):
   
     NumAssignedCores = mpi.world.size
     IsDrawSystem = False
@@ -88,37 +88,58 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC):
     origin_shift_1  = -2
     origin_shift_2  = -2
 
+
+    relative_position_vec = np.array([0.0, 0.0, 0.0])
+
+    if relativeposition == "Overlap" or "None":
+        relative_position_vec = np.array([0.0, 0.0, 0.0])
+    elif relativeposition == "Bridge":
+        if rotX_theta_FeC != 0 or rotY_theta_FeC != 0 or rotZ_theta_FeC != 0:
+            try: raise ValueError("!!! ERROR : when FeC are rotated, relative position have to be set to None" )
+            except ValueError as e: print(e)
+        else:
+            relative_position_vec = 0.5*unitcell_vec_1 + 0.5*unitcell_vec_2
+    elif relativeposition == "Shift":
+        if rotX_theta_FeC != 0 or rotY_theta_FeC != 0 or rotZ_theta_FeC != 0:
+            try: raise ValueError("!!! ERROR : when FeC are rotated, relative position have to be set to None" )
+            except ValueError as e: print(e)
+        else:
+            relative_position_vec = (1/3)*unitcell_vec_1 + (1/3)*unitcell_vec_2
+    else:
+        try: raise ValueError("!!! ERROR : relative position should be chosen from Overlap, Bridge, Shift or None" )
+        except ValueError as e: print(e)
+
     # Making up system
 
     system = Atoms('C10H10FeC32C32', 
                    positions=[
 
                     # Ferrocene's Cp ring C
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(0*theta), radius_Cp*math.sin(0*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(1*theta), radius_Cp*math.sin(1*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(2*theta), radius_Cp*math.sin(2*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(3*theta), radius_Cp*math.sin(3*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(4*theta), radius_Cp*math.sin(4*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(0*theta), radius_Cp*math.sin(0*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(1*theta), radius_Cp*math.sin(1*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(2*theta), radius_Cp*math.sin(2*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(3*theta), radius_Cp*math.sin(3*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(4*theta), radius_Cp*math.sin(4*theta),  dist_Cp_Fe])))),                  
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(0*theta), radius_Cp*math.sin(0*theta), -dist_Cp_Fe])))) + relative_position_vec  ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(1*theta), radius_Cp*math.sin(1*theta), -dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(2*theta), radius_Cp*math.sin(2*theta), -dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(3*theta), radius_Cp*math.sin(3*theta), -dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(4*theta), radius_Cp*math.sin(4*theta), -dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(0*theta), radius_Cp*math.sin(0*theta),  dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(1*theta), radius_Cp*math.sin(1*theta),  dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(2*theta), radius_Cp*math.sin(2*theta),  dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(3*theta), radius_Cp*math.sin(3*theta),  dist_Cp_Fe])))) + relative_position_vec ,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([radius_Cp*math.cos(4*theta), radius_Cp*math.sin(4*theta),  dist_Cp_Fe])))) + relative_position_vec ,                  
 
                       # Ferrocene's Cp ring H
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(0*theta), (dist_C_H+radius_Cp)*math.sin(0*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(1*theta), (dist_C_H+radius_Cp)*math.sin(1*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(2*theta), (dist_C_H+radius_Cp)*math.sin(2*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(3*theta), (dist_C_H+radius_Cp)*math.sin(3*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(4*theta), (dist_C_H+radius_Cp)*math.sin(4*theta), -dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(0*theta), (dist_C_H+radius_Cp)*math.sin(0*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(1*theta), (dist_C_H+radius_Cp)*math.sin(1*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(2*theta), (dist_C_H+radius_Cp)*math.sin(2*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(3*theta), (dist_C_H+radius_Cp)*math.sin(3*theta),  dist_Cp_Fe])))),
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(4*theta), (dist_C_H+radius_Cp)*math.sin(4*theta),  dist_Cp_Fe])))),
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(0*theta), (dist_C_H+radius_Cp)*math.sin(0*theta), -dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(1*theta), (dist_C_H+radius_Cp)*math.sin(1*theta), -dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(2*theta), (dist_C_H+radius_Cp)*math.sin(2*theta), -dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(3*theta), (dist_C_H+radius_Cp)*math.sin(3*theta), -dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(4*theta), (dist_C_H+radius_Cp)*math.sin(4*theta), -dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(0*theta), (dist_C_H+radius_Cp)*math.sin(0*theta),  dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(1*theta), (dist_C_H+radius_Cp)*math.sin(1*theta),  dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(2*theta), (dist_C_H+radius_Cp)*math.sin(2*theta),  dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(3*theta), (dist_C_H+radius_Cp)*math.sin(3*theta),  dist_Cp_Fe])))) + relative_position_vec,
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([(dist_C_H+radius_Cp)*math.cos(4*theta), (dist_C_H+radius_Cp)*math.sin(4*theta),  dist_Cp_Fe])))) + relative_position_vec,
 
                       # Ferrocene's Fe
-                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([0.0, 0.0, 0.0])))),
+                        rotZ_np(rotZ_theta_FeC, rotY_np(rotY_theta_FeC, rotX_np(rotX_theta_FeC, np.array([0.0, 0.0, 0.0])))) + relative_position_vec,
 
                     # Graphene Carbon Atoms
                     # Each atom's location is described as the sum of
@@ -234,13 +255,15 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC):
 
     # GPAW calculator's Parameters
 
+    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC)+"_"+"rotY"+str(rotY_theta_FeC)+"_"+"rotZ"+str(rotZ_theta_FeC)
+
     calc = GPAW(h=0.3,
                 xc='PBE',
                 basis='szp(dzp)',
                 occupations=FermiDirac(width=0.1),
                 kpts={'density': 3.5, 'even': True},
                 mode='lcao',
-                txt=SystemName+"_"+"scat.txt",
+                txt=systemname_mod+"_"+"scat.txt",
                 mixer=Mixer(0.02, 5, weight=100.0),
                 symmetry={'point_group': False, 'time_reversal': False}
                 )
@@ -262,7 +285,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC):
                 occupations=FermiDirac(width=0.1),
                 kpts={'density': 3.5, 'even': True},
                 mode='lcao',
-                txt=SystemName+"_"+"llead.txt",
+                txt=systemname_mod+"_"+"llead.txt",
                 mixer=Mixer(0.02, 5, weight=100.0),
                 symmetry={'point_group': False, 'time_reversal': False}
                 )
@@ -282,10 +305,11 @@ if len(args) == 5:
     rotX_theta_FeC = (float(args[2]))/180*np.pi
     rotY_theta_FeC = (float(args[3]))/180*np.pi
     rotZ_theta_FeC = (float(args[4]))/180*np.pi
-    main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC)
+    relative_position = str(args[5])
+    main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position)
 else:
     try:
-        raise ValueError("!!! ERROR : SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC are must be given as args !!!")
+        raise ValueError("!!! ERROR : SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position are must be given as args !!!")
     except ValueError as e:
         print(e)
     # SystemName = "FeC-graphene_ON"
