@@ -271,7 +271,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.get_potential_energy()  # Converge everything!
 
-    calc.write(SystemName+"_"+"scat.gpw")
+    calc.write(systemname_mod+"_"+"scat.gpw")
 
     # Left lead layer-----------------------------
 
@@ -293,7 +293,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.get_potential_energy()  # Converge everything!
 
-    calc.write(SystemName+"_"+"llead.gpw")
+    calc.write(systemname_mod+"_"+"llead.gpw")
 
 
 # ShellScript Interface
