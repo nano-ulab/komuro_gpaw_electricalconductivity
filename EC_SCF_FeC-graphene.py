@@ -26,7 +26,7 @@ import math
 import sys
 
 from ase.visualize import view
-from ase.io import write, cif
+from ase.io import read, write
 from ase import Atoms
 from ase import parallel
 
@@ -111,8 +111,12 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
 
     # Define systemname with modification
-    
-    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC)+"_"+"rotY"+str(rotY_theta_FeC)+"_"+"rotZ"+str(rotZ_theta_FeC)
+
+    rotX_theta_FeC_int = int(rotX_theta_FeC*180/np.pi)
+    rotY_theta_FeC_int = int(rotY_theta_FeC*180/np.pi)
+    rotZ_theta_FeC_int = int(rotZ_theta_FeC*180/np.pi)
+
+    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC_int)+"_"+"rotY"+str(rotY_theta_FeC_int)+"_"+"rotZ"+str(rotZ_theta_FeC_int)
     # Making up system
 
     system = Atoms('C10H10FeC32C32', 
@@ -246,7 +250,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.center()
 
-    cif.write_cif(systemname_mod+".cif", system)
+    write(systemname_mod+".cif", system)
     # view(system)
     # write('model_DFT_FeC-graphene_ON.png', system)
 
