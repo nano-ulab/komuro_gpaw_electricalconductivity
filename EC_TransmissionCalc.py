@@ -134,7 +134,7 @@ def main(SystemName, Voltage_range):
     import csv
 
     IV_data = np.array([Voltage_range, current_mods]).T
-    with open(SystemName+"_"+"IV", "w") as IV_file:
+    with open(SystemName+"_"+"IV.csv", "w") as IV_file:
         writer = csv.writer(IV_file)
         writer.writerows(IV_data.tolist())
 
