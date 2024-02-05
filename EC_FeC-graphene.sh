@@ -1,11 +1,8 @@
 SystemName=FeC-graphene_ON
-
 rotX_theta_FeC=0.0
 rotY_theta_FeC=0.0
 rotZ_theta_FeC=0.0
 relativepos=Overlap
-# relativepos=Shift
-# relativepos=Bridge
 
 systemname_mod=${SystemName}_${relativeposition}_rotX${rotX_theta_FeC}_rotY${rotY_theta_FeC}_rotZ${rotZ_theta_FeC}
 
