@@ -91,7 +91,7 @@ def main(cif_files_folder_name):
 import sys
 
 args = sys.argv
-if len(args) == 6: # args[0]はpythonファイル名自体
+if len(args) == 2: # args[0]はpythonファイル名自体
     cif_files_folder_name = str(args[1])
     main(cif_files_folder_name)
 else:
