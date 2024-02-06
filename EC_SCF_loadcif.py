@@ -42,7 +42,7 @@ def main(cif_files_folder_name):
         # add charge in Fe atom
         
         if mpi.rank == 0:
-            if "charge+1.0" in cif_file_path:
+            if "c+1.0" in cif_file_path:
                 print("setting charges to system...")
                 charges = []
                 for i, atom in enumerate(system.get_chemical_symbols()):
