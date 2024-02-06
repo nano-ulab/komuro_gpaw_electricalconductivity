@@ -26,7 +26,7 @@ import math
 import sys
 
 from ase.visualize import view
-from ase.io import write
+from ase.io import read, write
 from ase import Atoms
 from ase import parallel
 
@@ -48,11 +48,12 @@ def rotY_np(theta, input):
 def rotZ_np(theta, input):
     return np.dot(np.array([[np.cos(theta), -np.sin(theta), 0],[np.sin(theta), np.cos(theta), 0],[0, 0, 1]]), input)
 
-def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativeposition):
+def main(SystemName, FolderName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativeposition):
   
     NumAssignedCores = mpi.world.size
     IsDrawSystem = False
     IsSaveSystemFig = False
+
 
     # Setup the Atoms for the scattering region.
 
@@ -109,6 +110,19 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
         try: raise ValueError("!!! ERROR : relative position should be chosen from Overlap, Bridge, Shift or None" )
         except ValueError as e: print(e)
 
+
+    # Define systemname with modification
+
+    rotX_theta_FeC_int = int(rotX_theta_FeC*180/np.pi)
+    rotY_theta_FeC_int = int(rotY_theta_FeC*180/np.pi)
+    rotZ_theta_FeC_int = int(rotZ_theta_FeC*180/np.pi)
+
+    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC_int)+"_"+"rotY"+str(rotY_theta_FeC_int)+"_"+"rotZ"+str(rotZ_theta_FeC_int)
+
+    cif_files_folder_path = os.path.join(".", FolderName)
+    saveloc = os.path.join(".", FolderName, systemname_mod)
+
+    
     # Making up system
 
     system = Atoms('C10H10FeC32C32', 
@@ -242,6 +256,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.center()
 
+    write(saveloc+".cif", system)
     # view(system)
     # write('model_DFT_FeC-graphene_ON.png', system)
 
@@ -255,7 +270,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     # GPAW calculator's Parameters
 
-    systemname_mod = SystemName+"_"+relativeposition+"_"+"rotX"+str(rotX_theta_FeC)+"_"+"rotY"+str(rotY_theta_FeC)+"_"+"rotZ"+str(rotZ_theta_FeC)
+
 
     calc = GPAW(h=0.3,
                 xc='PBE',
@@ -263,7 +278,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
                 occupations=FermiDirac(width=0.1),
                 kpts={'density': 3.5, 'even': True},
                 mode='lcao',
-                txt=systemname_mod+"_"+"scat.txt",
+                txt=saveloc+"_"+"scat.txt",
                 mixer=Mixer(0.02, 5, weight=100.0),
                 symmetry={'point_group': False, 'time_reversal': False}
                 )
@@ -271,7 +286,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.get_potential_energy()  # Converge everything!
 
-    calc.write(SystemName+"_"+"scat.gpw")
+    calc.write(saveloc+"_"+"scat.gpw")
 
     # Left lead layer-----------------------------
 
@@ -285,7 +300,7 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
                 occupations=FermiDirac(width=0.1),
                 kpts={'density': 3.5, 'even': True},
                 mode='lcao',
-                txt=systemname_mod+"_"+"llead.txt",
+                txt=saveloc+"_"+"llead.txt",
                 mixer=Mixer(0.02, 5, weight=100.0),
                 symmetry={'point_group': False, 'time_reversal': False}
                 )
@@ -293,23 +308,25 @@ def main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relativepos
 
     system.get_potential_energy()  # Converge everything!
 
-    calc.write(SystemName+"_"+"llead.gpw")
+    calc.write(saveloc+"_"+"llead.gpw")
 
 
 # ShellScript Interface
 import sys
 
 args = sys.argv
-if len(args) == 5:
+if len(args) == 7: # args[0]はpythonファイル名自体
     SystemName = str(args[1])
-    rotX_theta_FeC = (float(args[2]))/180*np.pi
-    rotY_theta_FeC = (float(args[3]))/180*np.pi
-    rotZ_theta_FeC = (float(args[4]))/180*np.pi
-    relative_position = str(args[5])
-    main(SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position)
+    FolderName = str(args[2])
+    rotX_theta_FeC = (float(args[3]))/180*np.pi
+    rotY_theta_FeC = (float(args[4]))/180*np.pi
+    rotZ_theta_FeC = (float(args[5]))/180*np.pi
+    relative_position = str(args[6])
+    main(SystemName, FolderName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position)
 else:
+    print(args)
     try:
-        raise ValueError("!!! ERROR : SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position are must be given as args !!!")
+        raise ValueError("!!! ERROR : SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position, cif_files_folder_name must be given as args !!!")
     except ValueError as e:
         print(e)
     # SystemName = "FeC-graphene_ON"
