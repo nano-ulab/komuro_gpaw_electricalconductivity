@@ -90,6 +90,9 @@ def main(cif_files_folder_name, Voltage_range):
             except ValueError as e: print(e)
             return None
 
+        
+        fileloc = os.path.join(".", cif_files_folder_name, savename)
+
         # Set TranportCalculator for calculation
         tcalc = TransportCalculator(h=H_scat, h1=H_llead, h2=H_rlead,  # hamiltonian matrices
                                     s=S_scat, s1=S_llead, s2=S_rlead,  # overlap matrices
@@ -126,7 +129,7 @@ def main(cif_files_folder_name, Voltage_range):
         T = tcalc.get_transmission()
         plt.plot(tcalc.energies, T)
         plt.title("Transmission function of " + savename)
-        plt.savefig(savename+"_"+"TransmissionFunc.png")
+        plt.savefig(fileloc+"_"+"TransmissionFunc.png")
         plt.close()
 
         # # ... and the projected density of states (pdos) of the FeC molecular orbitals
@@ -146,7 +149,7 @@ def main(cif_files_folder_name, Voltage_range):
         plt.plot(Voltage_range, 2.*units._e**2/units._hplanck*current)
         plt.xlabel("U [V]")
         plt.ylabel("I [A]")
-        plt.savefig(savename+"_"+"IV.png")
+        plt.savefig(fileloc+"_"+"IV.png")
         plt.close()
 
         # log10
@@ -154,13 +157,13 @@ def main(cif_files_folder_name, Voltage_range):
         plt.plot(Voltage_range, np.log10(np.abs(current_mods)))
         plt.xlabel("U [V]")
         plt.ylabel("I [A]")
-        plt.savefig(savename+"_"+"logIV.png")
+        plt.savefig(fileloc+"_"+"logIV.png")
         plt.close()
 
         import csv
 
         IV_data = np.array([Voltage_range, current_mods]).T
-        with open(savename+"_"+"IV.csv", "w") as IV_file:
+        with open(fileloc+"_"+"IV.csv", "w") as IV_file:
             writer = csv.writer(IV_file)
             writer.writerows(IV_data.tolist())
 
