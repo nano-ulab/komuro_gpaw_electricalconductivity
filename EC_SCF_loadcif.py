@@ -48,13 +48,22 @@ def main(cif_files_folder_name):
 
         savename = os.path.splitext(os.path.basename(cif_file_path))[0]
 
+        filepath_scat_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw")
+        print(filepath_scat_gpw)
+        filepath_scat_txt = os.path.join(os.path.dirname(cif_file_path), savename+"_scat.txt")
+        print(filepath_scat_txt)
+        filepath_llead_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw")
+        print(filepath_llead_gpw)
+        filepath_llead_txt = os.path.join(os.path.dirname(cif_file_path), savename+"_llead.txt")
+        print(filepath_llead_txt)
+
         calc = GPAW(h=0.3,
                     xc='PBE',
                     basis='szp(dzp)',
                     occupations=FermiDirac(width=0.1),
                     kpts={'density': 3.5, 'even': True},
                     mode='lcao',
-                    txt=savename+"_"+"scat.txt",
+                    txt=filepath_scat_txt,
                     mixer=Mixer(0.02, 5, weight=100.0),
                     symmetry={'point_group': False, 'time_reversal': False}
                     )
@@ -62,7 +71,7 @@ def main(cif_files_folder_name):
 
         system.get_potential_energy()  # Converge everything!
 
-        calc.write(savename+"_"+"scat.gpw")
+        calc.write(filepath_scat_gpw)
 
         # Left lead layer-----------------------------
 
@@ -76,7 +85,7 @@ def main(cif_files_folder_name):
                     occupations=FermiDirac(width=0.1),
                     kpts={'density': 3.5, 'even': True},
                     mode='lcao',
-                    txt=savename+"_"+"llead.txt",
+                    txt=filepath_llead_txt,
                     mixer=Mixer(0.02, 5, weight=100.0),
                     symmetry={'point_group': False, 'time_reversal': False}
                     )
@@ -84,7 +93,7 @@ def main(cif_files_folder_name):
 
         system.get_potential_energy()  # Converge everything!
 
-        calc.write(savename+"_"+"llead.gpw")
+        calc.write(filepath_llead_gpw)
 
 
 # ShellScript Interface

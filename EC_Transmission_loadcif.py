@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 from ase import units
 
-from gpaw.lcao.tools import (get_lcao_hamiltonian,              get_lead_lcao_hamiltonian, lead_kspace2realspace)
+from gpaw.lcao.tools import (get_lcao_hamiltonian, get_lead_lcao_hamiltonian, lead_kspace2realspace)
 from gpaw import restart
 
 # Change Current directory to root dir of this file
@@ -41,10 +41,15 @@ def main(cif_files_folder_name, Voltage_range):
     for cif_file_path in cif_file_paths:
 
         savename = os.path.splitext(os.path.basename(cif_file_path))[0]
-       
-        if os.path.isfile(os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw")):
+
+        filepath_scat_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw")
+        print(filepath_scat_gpw)
+        filepath_llead_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw")
+        print(filepath_llead_gpw)
+
+        if os.path.isfile(filepath_scat_gpw):
             
-            scat, scat_calc = restart(os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw"))
+            scat, scat_calc = restart(filepath_scat_gpw)
 
             Ef_scat = scat.calc.get_fermi_level()
             H_skMM_scat, S_kMM_scat = get_lcao_hamiltonian(scat_calc)
@@ -54,13 +59,14 @@ def main(cif_files_folder_name, Voltage_range):
             H_scat -= Ef_scat * S_scat
 
         else:
-            try: raise ValueError("!!! ERROR : "+(os.path.join(cif_file_path, "_scat.gpw"))+" is missing!")
+            try: raise ValueError("!!! ERROR : " + filepath_scat_gpw + " is missing!")
             except ValueError as e: print(e)
+            return None
 
 
-        if os.path.isfile(os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw")):
+        if os.path.isfile(filepath_llead_gpw):
 
-            llead, llead_calc = restart(os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw"))
+            llead, llead_calc = restart(filepath_llead_gpw)
 
             Ef_llead = llead.calc.get_fermi_level()
             tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc)
@@ -70,7 +76,7 @@ def main(cif_files_folder_name, Voltage_range):
             H_llead, S_llead = H_skMM_llead[0, 0], S_kMM_llead[0]
             H_llead -= Ef_llead * S_llead
 
-            rlead, rlead_calc = restart(os.path.join(cif_file_path, "_llead.gpw"))
+            rlead, rlead_calc = restart(filepath_llead_gpw)
 
             Ef_rlead = rlead_calc.get_fermi_level()
             tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc)
@@ -80,8 +86,9 @@ def main(cif_files_folder_name, Voltage_range):
             H_rlead -= Ef_rlead * S_rlead
 
         else:
-            try: raise ValueError("!!! ERROR : "+(os.path.join(cif_file_path, "_scat.gpw"))+" is missing!")
+            try: raise ValueError("!!! ERROR : " + filepath_llead_gpw + " is missing!")
             except ValueError as e: print(e)
+            return None
 
         # Set TranportCalculator for calculation
         tcalc = TransportCalculator(h=H_scat, h1=H_llead, h2=H_rlead,  # hamiltonian matrices

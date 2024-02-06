@@ -13,7 +13,7 @@ import os
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 
-def main(SystemName, Voltage_range):
+def main(SystemName, FolderName, Voltage_range):
     # load calculated results
 
     """
@@ -34,7 +34,8 @@ def main(SystemName, Voltage_range):
             0   0      H_l
         )
     """
-    scat, scat_calc = restart(SystemName+"_"+"scat.gpw")
+    fileloc = os.path.join(".", FolderName, SystemName)
+    scat, scat_calc = restart(fileloc+"_"+"scat.gpw")
 
     Ef_scat = scat.calc.get_fermi_level()
     H_skMM_scat, S_kMM_scat = get_lcao_hamiltonian(scat_calc)
@@ -44,7 +45,7 @@ def main(SystemName, Voltage_range):
     H_scat -= Ef_scat * S_scat
 
 
-    llead, llead_calc = restart(SystemName+"_"+"llead.gpw")
+    llead, llead_calc = restart(fileloc+"_"+"llead.gpw")
 
     Ef_llead = llead.calc.get_fermi_level()
     tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc)
@@ -54,7 +55,7 @@ def main(SystemName, Voltage_range):
     H_llead, S_llead = H_skMM_llead[0, 0], S_kMM_llead[0]
     H_llead -= Ef_llead * S_llead
 
-    rlead, rlead_calc = restart(SystemName+"_"+"llead.gpw")
+    rlead, rlead_calc = restart(fileloc+"_"+"llead.gpw")
 
     Ef_rlead = rlead_calc.get_fermi_level()
     tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc)
@@ -99,42 +100,42 @@ def main(SystemName, Voltage_range):
     tcalc.set(energies=Voltage_range)
     T = tcalc.get_transmission()
     plt.plot(tcalc.energies, T)
-    plt.title("Transmission function of " + SystemName)
-    plt.savefig(SystemName+"_"+"TransmissionFunc.png")
+    plt.title("Transmission function of " + fileloc)
+    plt.savefig(fileloc+"_"+"TransmissionFunc.png")
     plt.close()
 
     # ... and the projected density of states (pdos) of the FeC molecular orbitals
     tcalc.set(pdos=bfs)
     pdos_ne = tcalc.get_pdos()
-    plt.title("Projected density of states of " + SystemName)
+    plt.title("Projected density of states of " + fileloc)
     for i in range(len(pdos_ne)):
         plt.plot(tcalc.energies, pdos_ne[i], label=str(i))
-    plt.savefig(SystemName+"_"+"PDOS.png")
+    plt.savefig(fileloc+"_"+"PDOS.png")
     plt.close()
 
     # Plot current correspond to Vb
     current = tcalc.get_current(Voltage_range, T = 300.)
     current_mods = 2.*units._e**2/units._hplanck*current
 
-    plt.title("I-V curve of " + SystemName)
+    plt.title("I-V curve of " + fileloc)
     plt.plot(Voltage_range, 2.*units._e**2/units._hplanck*current)
     plt.xlabel("U [V]")
     plt.ylabel("I [A]")
-    plt.savefig(SystemName+"_"+"IV.png")
+    plt.savefig(fileloc+"_"+"IV.png")
     plt.close()
 
     # log10
-    plt.title("logI-V curve of " + SystemName)
+    plt.title("logI-V curve of " + fileloc)
     plt.plot(Voltage_range, np.log10(np.abs(current_mods)))
     plt.xlabel("U [V]")
     plt.ylabel("I [A]")
-    plt.savefig(SystemName+"_"+"logIV.png")
+    plt.savefig(fileloc+"_"+"logIV.png")
     plt.close()
 
     import csv
 
     IV_data = np.array([Voltage_range, current_mods]).T
-    with open(SystemName+"_"+"IV.csv", "w") as IV_file:
+    with open(fileloc+"_"+"IV.csv", "w") as IV_file:
         writer = csv.writer(IV_file)
         writer.writerows(IV_data.tolist())
 
@@ -162,13 +163,14 @@ def main(SystemName, Voltage_range):
 import sys
 
 args = sys.argv
-if len(args) == 5:
+if len(args) == 6:
     SystemName = str(args[1])
-    V_lowest = float(args[2])
-    V_highest = float(args[3])
-    V_delta = float(args[4])
+    FolderName = str(args[2])
+    V_lowest = float(args[3])
+    V_highest = float(args[4])
+    V_delta = float(args[5])
     Voltage_range = np.arange(V_lowest, V_highest, V_delta)
-    main(SystemName, Voltage_range)
+    main(SystemName, FolderName, Voltage_range)
 else:
     try:
         raise ValueError("!!! ERROR : SystemName, V_lowest, V_highest, V_step are must be given as args !!!")
