@@ -40,6 +40,8 @@ def main(cif_files_folder_name):
         system = read(cif_file_path)
 
         # add charge in Fe atom
+
+        system_charge = 0.0
         if mpi.rank == 0:
             if "c+1.0" in cif_file_path:
                 print("setting charges to system...")
@@ -79,12 +81,8 @@ def main(cif_files_folder_name):
                     mode='lcao',
                     txt=filepath_scat_txt,
                     mixer=Mixer(0.02, 5, weight=100.0),
-<<<<<<< HEAD
-                    symmetry={'point_group': False, 'time_reversal': False}
-=======
                     symmetry={'point_group': False, 'time_reversal': False},
                     charge = system_charge
->>>>>>> master
                     )
         system.calc = calc
 
