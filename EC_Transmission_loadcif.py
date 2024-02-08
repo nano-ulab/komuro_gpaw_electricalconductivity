@@ -46,6 +46,8 @@ def main(cif_files_folder_name, Voltage_range):
         print(filepath_scat_gpw)
         filepath_llead_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw")
         print(filepath_llead_gpw)
+        filepath_rlead_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_rlead.gpw")
+        print(filepath_rlead_gpw)
 
         if os.path.isfile(filepath_scat_gpw):
             
@@ -69,27 +71,35 @@ def main(cif_files_folder_name, Voltage_range):
             llead, llead_calc = restart(filepath_llead_gpw)
 
             Ef_llead = llead.calc.get_fermi_level()
-            tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc)
+            tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc, direction='z')
 
             # Only use first kpt, spin, as there are no more
 
             H_llead, S_llead = H_skMM_llead[0, 0], S_kMM_llead[0]
             H_llead -= Ef_llead * S_llead
 
-            rlead, rlead_calc = restart(filepath_llead_gpw)
-
-            Ef_rlead = rlead_calc.get_fermi_level()
-            tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc)
-            # Only use first kpt, spin, as there are no more
-
-            H_rlead, S_rlead = H_skMM_rlead[0, 0], S_kMM_rlead[0]
-            H_rlead -= Ef_rlead * S_rlead
 
         else:
             try: raise ValueError("!!! ERROR : " + filepath_llead_gpw + " is missing!")
             except ValueError as e: print(e)
             return None
 
+       
+        if os.path.isfile(filepath_rlead_gpw):
+
+            rlead, rlead_calc = restart(filepath_rlead_gpw)
+
+            Ef_rlead = rlead_calc.get_fermi_level()
+            tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc, direction='z')
+            # Only use first kpt, spin, as there are no more
+
+            H_rlead, S_rlead = H_skMM_rlead[0, 0], S_kMM_rlead[0]
+            H_rlead -= Ef_rlead * S_rlead
+
+        else:
+            try: raise ValueError("!!! ERROR : " + filepath_rlead_gpw + " is missing!")
+            except ValueError as e: print(e)
+            return None
         
         fileloc = os.path.join(".", cif_files_folder_name, savename)
 

@@ -48,7 +48,7 @@ def main(SystemName, FolderName, Voltage_range):
     llead, llead_calc = restart(fileloc+"_"+"llead.gpw")
 
     Ef_llead = llead.calc.get_fermi_level()
-    tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc)
+    tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc, direction = 'z')
 
     # Only use first kpt, spin, as there are no more
 
@@ -58,7 +58,7 @@ def main(SystemName, FolderName, Voltage_range):
     rlead, rlead_calc = restart(fileloc+"_"+"llead.gpw")
 
     Ef_rlead = rlead_calc.get_fermi_level()
-    tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc)
+    tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc, direction = 'z')
     # Only use first kpt, spin, as there are no more
 
     H_rlead, S_rlead = H_skMM_rlead[0, 0], S_kMM_rlead[0]

@@ -279,6 +279,7 @@ def main(SystemName, FolderName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC,
                 kpts={'density': 3.5, 'even': True},
                 mode='lcao',
                 txt=saveloc+"_"+"scat.txt",
+                setups = {'Fe':':d,5.3'},
                 mixer=Mixer(0.02, 5, weight=100.0),
                 symmetry={'point_group': False, 'time_reversal': False}
                 )
@@ -291,7 +292,7 @@ def main(SystemName, FolderName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC,
     # Left lead layer-----------------------------
 
     # Use upper graphene in the lead, so only take those from before
-    system = system[21:60].copy()
+    system = system[21:53].copy()
 
     # Attach a GPAW calculator
     calc = GPAW(h=0.3,
@@ -301,6 +302,7 @@ def main(SystemName, FolderName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC,
                 kpts={'density': 3.5, 'even': True},
                 mode='lcao',
                 txt=saveloc+"_"+"llead.txt",
+                setups = {'Fe':':d,5.3'},
                 mixer=Mixer(0.02, 5, weight=100.0),
                 symmetry={'point_group': False, 'time_reversal': False}
                 )
@@ -326,7 +328,7 @@ if len(args) == 7: # args[0]はpythonファイル名自体
 else:
     print(args)
     try:
-        raise ValueError("!!! ERROR : SystemName, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position, cif_files_folder_name must be given as args !!!")
+        raise ValueError("!!! ERROR : SystemName, cif_files_folder_name, rotX_theta_FeC, rotY_theta_FeC, rotZ_theta_FeC, relative_position must be given as args !!!")
     except ValueError as e:
         print(e)
     # SystemName = "FeC-graphene_ON"

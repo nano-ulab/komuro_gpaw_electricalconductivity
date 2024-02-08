@@ -72,7 +72,6 @@ def main(cif_files_folder_name):
     cif_file_paths = glob.glob(os.path.join(".", cif_files_folder_name, "*.cif"))
     
     for cif_file_path in cif_file_paths:
-
             
         system = read(cif_file_path)
 
@@ -92,9 +91,9 @@ def main(cif_files_folder_name):
 
         else : 
             system_charge = 0.0
-        print("system charge amount: "+str(system_charge))
-        
-        # Add L/R leads to system
+        print(system_charge)
+
+        # Add L/R leads
         # Use upper graphene in the lead, so only take those from before
         llead = system[:32].copy()
         # G-FeC-GのGを複製し，横方向にずらしてくっつけてleadにする！
@@ -111,10 +110,7 @@ def main(cif_files_folder_name):
 
         scat_lead_positions = np.vstack((system.positions, llead.positions))
         scat_lead_positions = np.vstack((scat_lead_positions, rlead.positions))
-        system_with_lead = Atoms(symbols = scat_lead_chem_symbols, positions = scat_lead_positions, cell = system.get_cell()*[[1, 1, 1],[2, 2, 2],[1, 1, 1]], pbc = [True, True, True])
-        ##################
-        #  Calculation   #
-        ##################
+        system_scat_lead = Atoms(symbols = scat_lead_chem_symbols, positions = scat_lead_positions, cell = system.get_cell()*[[1, 1, 1],[2, 2, 2],[1, 1, 1]])
 
         # Scattering region-------------------------
 
@@ -122,74 +118,11 @@ def main(cif_files_folder_name):
 
         savename = os.path.splitext(os.path.basename(cif_file_path))[0]
 
-        filepath_scat_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_scat.gpw")
-        filepath_scat_txt = os.path.join(os.path.dirname(cif_file_path), savename+"_scat.txt")
-        filepath_llead_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_llead.gpw")
-        filepath_llead_txt = os.path.join(os.path.dirname(cif_file_path), savename+"_llead.txt")
-        filepath_rlead_gpw = os.path.join(os.path.dirname(cif_file_path), savename+"_rlead.gpw")
-        filepath_rlead_txt = os.path.join(os.path.dirname(cif_file_path), savename+"_rlead.txt")
-
-        calc = GPAW(h=0.3,
-                    xc='PBE',
-                    basis='szp(dzp)',
-                    occupations=FermiDirac(width=0.1),
-                    kpts={'density': 3.5, 'even': True},
-                    mode='lcao',
-                    txt=filepath_scat_txt,
-                    mixer=Mixer(0.02, 5, weight=100.0),
-                    setups = {'Fe':':d,5.3'},
-                    symmetry={'point_group': False, 'time_reversal': False},
-                    charge = system_charge
-                    )
-        system_with_lead.calc = calc
-
-        system_with_lead.get_potential_energy()  # Converge everything!
-
-        calc.write(filepath_scat_gpw)
+        view(system)
 
         # Left lead layer-----------------------------
 
-        # Use upper graphene in the lead, so only take those from before
-        llead = system_with_lead[-64:-32].copy()
-
-        # Attach a GPAW calculator
-        calc = GPAW(h=0.3,
-                    xc='PBE',
-                    basis='szp(dzp)',
-                    occupations=FermiDirac(width=0.1),
-                    kpts={'density': 3.5, 'even': True},
-                    mode='lcao',
-                    txt=filepath_llead_txt,
-                    mixer=Mixer(0.02, 5, weight=100.0),
-                    setups = {'Fe':':d,5.3'},
-                    symmetry={'point_group': False, 'time_reversal': False}
-                    )
-        llead.calc = calc
-
-        llead.get_potential_energy()  # Converge everything!
-
-        calc.write(filepath_llead_gpw)
-
-        rlead = system[-32:].copy()
-
-        # Attach a GPAW calculator
-        calc = GPAW(h=0.3,
-                    xc='PBE',
-                    basis='szp(dzp)',
-                    occupations=FermiDirac(width=0.1),
-                    kpts={'density': 3.5, 'even': True},
-                    mode='lcao',
-                    txt=filepath_rlead_txt,
-                    mixer=Mixer(0.02, 5, weight=100.0),
-                    setups = {'Fe':':d,5.3'},
-                    symmetry={'point_group': False, 'time_reversal': False}
-                    )
-        rlead.calc = calc
-
-        rlead.get_potential_energy()  # Converge everything!
-
-        calc.write(filepath_rlead_gpw)
-
+        view(system_scat_lead)
 
 # ShellScript Interface
 import sys
