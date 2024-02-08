@@ -112,27 +112,27 @@ def main(cif_files_folder_name, Voltage_range):
         # Calculate the conductance (the energy zero corresponds to the Fermi level)
 
 
-        tcalc.set(energies=[Voltage_range])
+        # tcalc.set(energies=[Voltage_range])
         # for i in range(len(voltage_range)):
         #     G = tcalc.get_transmission()[i]
         #     print(f'Conductance: {G:.2f} 2e^2/h')
 
-        # Determine the basis functions of the two Hydrogen atoms and subdiagonalize
-        Fe_nbf = 3
-        C_nbf = 3
-        H_nbf = 2
-        Electrode_N = 32*1    # Number of Electrode atoms on each side in the scattering region
-        Electrode_nbf = C_nbf  # number of bf per Electrode atom (basis=szp)
-        FeC_nbf = 10*C_nbf + 10* H_nbf + 1* Fe_nbf   # number of bf per H atom (basis=szp)
-        bf_H1 = Electrode_nbf * Electrode_N
-        bfs = range(bf_H1, bf_H1 + FeC_nbf) # Bridging layer's basis funcs
+        # # Determine the basis functions of the two Hydrogen atoms and subdiagonalize
+        # Fe_nbf = 3
+        # C_nbf = 3
+        # H_nbf = 2
+        # Electrode_N = 32*1    # Number of Electrode atoms on each side in the scattering region
+        # Electrode_nbf = C_nbf  # number of bf per Electrode atom (basis=szp)
+        # FeC_nbf = 10*C_nbf + 10* H_nbf + 1* Fe_nbf   # number of bf per H atom (basis=szp)
+        # bf_H1 = Electrode_nbf * Electrode_N
+        # bfs = range(bf_H1, bf_H1 + FeC_nbf) # Bridging layer's basis funcs
 
-        h_rot, s_rot, eps_n, vec_jn = tcalc.subdiagonalize_bfs(bfs)
-        for n in range(len(eps_n)):
-            print("bf %i corresponds to the eigenvalue %.2f eV" % (bfs[n], eps_n[n]))
+        # h_rot, s_rot, eps_n, vec_jn = tcalc.subdiagonalize_bfs(bfs)
+        # for n in range(len(eps_n)):
+        #     print("bf %i corresponds to the eigenvalue %.2f eV" % (bfs[n], eps_n[n]))
 
-        # Switch to the rotated basis set
-        tcalc.set(h=h_rot, s=s_rot)
+        # # Switch to the rotated basis set
+        # tcalc.set(h=h_rot, s=s_rot)
 
         # plot the transmission function
         tcalc.set(energies=Voltage_range)
