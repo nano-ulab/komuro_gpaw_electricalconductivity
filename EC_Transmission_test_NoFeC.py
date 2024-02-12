@@ -1,0 +1,150 @@
+from ase.transport.calculators import TransportCalculator
+import numpy as np
+import pickle
+import matplotlib.pyplot as plt
+
+from ase import units
+
+from gpaw.lcao.tools import (get_lcao_hamiltonian,              get_lead_lcao_hamiltonian, lead_kspace2realspace)
+from gpaw import restart
+
+# Change Current directory to root dir of this file
+import os
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
+
+def main(SystemName, FolderName, Voltage_range):
+    # load calculated results
+
+    """
+    ### lead (Principal layer) ###
+        Atoms: Graphene
+        Hamiltonian:
+        H_lead = (
+            H_l   V
+            V†    H_l
+        )
+
+    ### Scattering Region ###
+        Atoms: G-FeC-G
+        Hamiltonian:
+        H_scat = (
+            H_l 0      0
+            0   H_scat 0
+            0   0      H_l
+        )
+    """
+    fileloc = os.path.join(".", FolderName, SystemName)
+    scat, scat_calc = restart(fileloc+"_"+"scat.gpw")
+
+    Ef_scat = scat.calc.get_fermi_level()
+    H_skMM_scat, S_kMM_scat = get_lcao_hamiltonian(scat_calc)
+    # Only use first kpt, spin, as there are no more
+
+    H_scat, S_scat = H_skMM_scat[0, 0], S_kMM_scat[0]
+    H_scat -= Ef_scat * S_scat
+
+
+    llead, llead_calc = restart(fileloc+"_"+"llead.gpw")
+
+    Ef_llead = llead.calc.get_fermi_level()
+    tmp, tmp2, H_skMM_llead, S_kMM_llead = get_lead_lcao_hamiltonian(llead_calc, direction='y')
+
+    # Only use first kpt, spin, as there are no more
+
+    H_llead, S_llead = H_skMM_llead[0, 0], S_kMM_llead[0]
+    H_llead -= Ef_llead * S_llead
+
+    rlead, rlead_calc = restart(fileloc+"_"+"llead.gpw")
+
+    Ef_rlead = rlead_calc.get_fermi_level()
+    tmp, tmp2, H_skMM_rlead, S_kMM_rlead = get_lead_lcao_hamiltonian(rlead_calc, direction='y')
+    # Only use first kpt, spin, as there are no more
+
+    H_rlead, S_rlead = H_skMM_rlead[0, 0], S_kMM_rlead[0]
+    H_rlead -= Ef_rlead * S_rlead
+
+
+    # Set TranportCalculator for calculation
+    tcalc = TransportCalculator(h=H_scat, h1=H_llead, h2=H_rlead,  # hamiltonian matrices
+                                s=S_scat, s1=S_llead, s2=S_rlead,  # overlap matrices
+                                align_bf=1)        # align the Fermi levels
+
+
+    # Calculate the conductance (the energy zero corresponds to the Fermi level)
+
+    tcalc.set(energies=[Voltage_range])
+
+    # plot the transmission function
+    tcalc.set(energies=Voltage_range)
+    T = tcalc.get_transmission()
+    plt.plot(tcalc.energies, T)
+    plt.title("Transmission function of " + fileloc)
+    plt.savefig(fileloc+"_"+"TransmissionFunc.png")
+    plt.close()
+
+    # Plot current correspond to Vb
+    current = tcalc.get_current(Voltage_range, T = 300.)
+    current_mods = 2.*units._e**2/units._hplanck*current
+
+    plt.title("I-V curve of " + fileloc)
+    plt.plot(Voltage_range, 2.*units._e**2/units._hplanck*current)
+    plt.xlabel("U [V]")
+    plt.ylabel("I [A]")
+    plt.savefig(fileloc+"_"+"IV.png")
+    plt.close()
+
+    # log10
+    plt.title("logI-V curve of " + fileloc)
+    plt.plot(Voltage_range, np.log10(np.abs(current_mods)))
+    plt.xlabel("U [V]")
+    plt.ylabel("I [A]")
+    plt.savefig(fileloc+"_"+"logIV.png")
+    plt.close()
+
+    import csv
+
+    IV_data = np.array([Voltage_range, current_mods]).T
+    with open(fileloc+"_"+"IV.csv", "w") as IV_file:
+        writer = csv.writer(IV_file)
+        writer.writerows(IV_data.tolist())
+
+    # Cut the coupling to the anti-bonding orbital.
+    # print('Cutting the coupling to the renormalized molecular state at %.2f eV' % (
+    #     eps_n[1]))
+    # h_rot_cut, s_rot_cut = tcalc.cutcoupling_bfs([bfs[1]])
+    # tcalc.set(h=h_rot_cut, s=s_rot_cut)
+    # plt.plot(tcalc.energies, tcalc.get_transmission())
+    # plt.title('Transmission without anti-bonding orbital')
+    # plt.show()
+
+    # Cut the coupling to the bonding-orbital.
+    # print('Cutting the coupling to the renormalized molecular state at %.2f eV' % (
+    #     eps_n[0]))
+    # tcalc.set(h=h_rot, s=s_rot)
+    # h_rot_cut, s_rot_cut = tcalc.cutcoupling_bfs([bfs[0]])
+    # tcalc.set(h=h_rot_cut, s=s_rot_cut)
+    # plt.plot(tcalc.energies, tcalc.get_transmission())
+    # plt.title('Transmission without bonding orbital')
+    # plt.show()
+
+
+# ShellScript Interface
+import sys
+
+args = sys.argv
+if len(args) == 6:
+    SystemName = str(args[1])
+    FolderName = str(args[2])
+    V_lowest = float(args[3])
+    V_highest = float(args[4])
+    V_delta = float(args[5])
+    Voltage_range = np.arange(V_lowest, V_highest, V_delta)
+    main(SystemName, FolderName, Voltage_range)
+else:
+    try:
+        raise ValueError("!!! ERROR : SystemName, FolderName, V_lowest, V_highest, V_step are must be given as args !!!")
+    except ValueError as e:
+        print(e)
+    # SystemName = "FeC-graphene_ON"
+    # Voltage_range = np.arange(-0.5, 0.5, 0.01)

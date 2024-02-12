@@ -112,7 +112,7 @@ def main(cif_files_folder_name, Voltage_range):
         # Calculate the conductance (the energy zero corresponds to the Fermi level)
 
 
-        # tcalc.set(energies=[Voltage_range])
+        tcalc.set(energies=[Voltage_range])
         # for i in range(len(voltage_range)):
         #     G = tcalc.get_transmission()[i]
         #     print(f'Conductance: {G:.2f} 2e^2/h')
@@ -131,8 +131,8 @@ def main(cif_files_folder_name, Voltage_range):
         # for n in range(len(eps_n)):
         #     print("bf %i corresponds to the eigenvalue %.2f eV" % (bfs[n], eps_n[n]))
 
-        # # Switch to the rotated basis set
-        # tcalc.set(h=h_rot, s=s_rot)
+        # Switch to the rotated basis set
+        tcalc.set(h=h_rot, s=s_rot)
 
         # plot the transmission function
         tcalc.set(energies=Voltage_range)
